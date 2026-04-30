@@ -72,8 +72,9 @@ jobs:
           VDS_PASSWORD: ${{ secrets.VDS_PASSWORD }}
           PROD_DIR: ${{ secrets.PROD_DIR }}
         run: |
-          sshpass -p "$VDS_PASSWORD" ssh -p "$VDS_PORT" -o StrictHostKeyChecking=no "$VDS_USER@$VDS_HOST" "mkdir -p '$PROD_DIR'"
-          sshpass -p "$VDS_PASSWORD" scp -P "$VDS_PORT" -o StrictHostKeyChecking=no .deploy.env "$VDS_USER@$VDS_HOST:$PROD_DIR/.env"
+          SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o GlobalKnownHostsFile=/dev/null"
+          sshpass -p "$VDS_PASSWORD" ssh -p "$VDS_PORT" $SSH_OPTS "$VDS_USER@$VDS_HOST" "mkdir -p '$PROD_DIR'"
+          sshpass -p "$VDS_PASSWORD" scp -P "$VDS_PORT" $SSH_OPTS .deploy.env "$VDS_USER@$VDS_HOST:$PROD_DIR/.env"
 
       - name: Deploy on VDS
         env:
@@ -83,7 +84,8 @@ jobs:
           VDS_PASSWORD: ${{ secrets.VDS_PASSWORD }}
           PROD_DIR: ${{ secrets.PROD_DIR }}
         run: |
-          sshpass -p "$VDS_PASSWORD" ssh -p "$VDS_PORT" -o StrictHostKeyChecking=no "$VDS_USER@$VDS_HOST" "
+          SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o GlobalKnownHostsFile=/dev/null"
+          sshpass -p "$VDS_PASSWORD" ssh -p "$VDS_PORT" $SSH_OPTS "$VDS_USER@$VDS_HOST" "
             set -e
             cd '$PROD_DIR'
             git remote set-url origin https://github.com/D1skord/SiteMonitoring.git
