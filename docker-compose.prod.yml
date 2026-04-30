@@ -5,7 +5,7 @@ services:
             args:
                 DOMAIN_NAME: ${DOMAIN_NAME}
         ports:
-            - "${NGINX_PORT:-80}:80"
+            - "${NGINX_PORT}:80"
         volumes:
             - ./:/var/www/symfony
         environment:
@@ -19,9 +19,9 @@ services:
         build:
             context: ./docker/php
             args:
-                TIMEZONE: ${TIMEZONE:-Europe/Moscow}
-                UID: ${UID:-1000}
-                GID: ${GID:-1000}
+                TIMEZONE: ${TIMEZONE}
+                UID: ${UID}
+                GID: ${GID}
         environment:
             APP_ENV: prod
             APP_SECRET: ${APP_SECRET}
@@ -41,9 +41,9 @@ services:
         build:
             context: ./docker/php
             args:
-                TIMEZONE: ${TIMEZONE:-Europe/Moscow}
-                UID: ${UID:-1000}
-                GID: ${GID:-1000}
+                TIMEZONE: ${TIMEZONE}
+                UID: ${UID}
+                GID: ${GID}
         command: php bin/console messenger:consume async -vv
         restart: unless-stopped
         environment:
@@ -62,9 +62,9 @@ services:
             - site_monitoring_net
 
     postgres:
-        image: postgres:${POSTGRES_VERSION:-13}-alpine
+        image: postgres:${POSTGRES_VERSION}-alpine
         ports:
-            - "${POSTGRES_PORT:-5432}:5432"
+            - "${POSTGRES_PORT}:5432"
         environment:
             POSTGRES_USER: ${POSTGRES_USER}
             POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -77,9 +77,9 @@ services:
     rabbitmq:
         image: rabbitmq:3.10.7-management
         environment:
-            RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
+            RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
         ports:
-            - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+            - "${RABBITMQ_MANAGEMENT_PORT}:15672"
         networks:
             - site_monitoring_net
 
@@ -104,7 +104,7 @@ services:
         volumes:
             - graylog_elasticsearch_data:/usr/share/elasticsearch/data
         ports:
-            - "${GRAYLOG_ELASTICSEARCH_PORT:-9200}:9200"
+            - "${GRAYLOG_ELASTICSEARCH_PORT}:9200"
         networks:
             - site_monitoring_net
 
@@ -113,12 +113,12 @@ services:
         environment:
             GRAYLOG_PASSWORD_SECRET: ${GRAYLOG_PASSWORD_SECRET}
             GRAYLOG_ROOT_PASSWORD_SHA2: ${GRAYLOG_ROOT_PASSWORD_SHA2}
-            GRAYLOG_HTTP_EXTERNAL_URI: http://127.0.0.1:${GRAYLOG_PORT:-9000}/
+            GRAYLOG_HTTP_EXTERNAL_URI: http://127.0.0.1:${GRAYLOG_PORT}/
         volumes:
             - graylog_data:/usr/share/graylog/data/data
         ports:
-            - "${GRAYLOG_PORT:-9000}:9000"
-            - "${GRAYLOG_GELF_PORT:-12201}:12201/udp"
+            - "${GRAYLOG_PORT}:9000"
+            - "${GRAYLOG_GELF_PORT}:12201/udp"
         depends_on:
             - graylog_mongo
             - graylog_elasticsearch
