@@ -1,0 +1,44 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Site index{% endblock %}
+
+{% block body %}
+    <h1 class="mt-4">Сайты</h1>
+
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Название</th>
+            <th>Ссылка</th>
+            <th>Статус</th>
+            <th>Дата оплаты</th>
+            <th>Сумма</th>
+            <th>Домен истекает</th>
+            <th>SSL истекает</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for site in sites %}
+            <tr>
+                <td><a href="{{ path('sites_show', {'id': site.id}) }}">{{ site.name }}</a></td>
+                <td><a target="_blank" href="{{ site.url }}">{{ site.url }}</a></td>
+                <td>{{ site.statusLogs[0].getStatus|default(null) }}</td>
+                <td>{{ site.paymentInfo ? site.paymentInfo.paymentDate|date("d.m.Y")|default(null) }}</td>
+                <td>{{ site.paymentInfo ? site.paymentInfo.cost|default(null) }}</td>
+                <td>{{ site.expireDate ? site.expireDate.domain|date("d.m.Y")|default(null) }}</td>
+                <td>{{ site.expireDate ? site.expireDate.ssl|date("d.m.Y")|default(null) }}</td>
+                <td>
+                    <a href="{{ path('sites_edit', {'id': site.id}) }}"><i class="fa-solid fa-pen-to-square"></i></a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="5">Список пуст</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a class="btn btn-primary" href="{{ path('sites_new') }}">Добавить сайт</a>
+{% endblock %}

@@ -1,0 +1,107 @@
+services:
+    nginx:
+        build:
+            context: ./docker/nginx
+            args:
+                DOMAIN_NAME: ${DOMAIN_NAME:-site-monitoring.local}
+        ports:
+            - "${NGINX_PORT:-80}:80"
+        volumes:
+            - ./:/var/www/symfony
+        environment:
+            DOMAIN_NAME: ${DOMAIN_NAME:-site-monitoring.local}
+        depends_on:
+            - php
+        networks:
+            - site_monitoring_net
+
+    php:
+        build:
+            context: ./docker/php
+            args:
+                TIMEZONE: ${TIMEZONE:-Europe/Moscow}
+                UID: ${UID:-1000}
+                GID: ${GID:-1000}
+        environment:
+            APP_ENV: ${APP_ENV:-dev}
+            APP_SECRET: ${APP_SECRET:-change-me}
+            DATABASE_URL: ${DATABASE_URL}
+            MESSENGER_TRANSPORT_DSN: ${MESSENGER_TRANSPORT_DSN}
+        volumes:
+            - ./:/var/www/symfony
+        depends_on:
+            - postgres
+            - rabbitmq
+        networks:
+            - site_monitoring_net
+
+    postgres:
+        image: postgres:${POSTGRES_VERSION:-13}-alpine
+        ports:
+            - "${POSTGRES_PORT:-5433}:5432"
+        environment:
+            POSTGRES_USER: ${POSTGRES_USER:-app}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+            POSTGRES_DB: ${POSTGRES_DB:-site_monitoring}
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+        networks:
+            - site_monitoring_net
+
+    rabbitmq:
+        image: rabbitmq:3.10.7-management
+        ports:
+            - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+        networks:
+            - site_monitoring_net
+
+    graylog_mongo:
+        image: mongo:5.0.13
+        volumes:
+            - graylog_mongo_data:/data/db
+        networks:
+            - site_monitoring_net
+
+    graylog_elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch-oss:7.10.2
+        environment:
+            discovery.type: single-node
+            cluster.name: docker-cluster
+            bootstrap.memory_lock: "true"
+            ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+        ulimits:
+            memlock:
+                soft: -1
+                hard: -1
+        volumes:
+            - graylog_elasticsearch_data:/usr/share/elasticsearch/data
+        ports:
+            - "${GRAYLOG_ELASTICSEARCH_PORT:-9200}:9200"
+        networks:
+            - site_monitoring_net
+
+    graylog:
+        image: graylog/graylog:5.0
+        environment:
+            GRAYLOG_PASSWORD_SECRET: ${GRAYLOG_PASSWORD_SECRET:-change-me}
+            GRAYLOG_ROOT_PASSWORD_SHA2: ${GRAYLOG_ROOT_PASSWORD_SHA2:-change-me}
+            GRAYLOG_HTTP_EXTERNAL_URI: http://127.0.0.1:${GRAYLOG_PORT:-9000}/
+        volumes:
+            - graylog_data:/usr/share/graylog/data/data
+        ports:
+            - "${GRAYLOG_PORT:-9000}:9000"
+            - "${GRAYLOG_GELF_PORT:-12201}:12201/udp"
+        depends_on:
+            - graylog_mongo
+            - graylog_elasticsearch
+        networks:
+            - site_monitoring_net
+
+volumes:
+    postgres_data:
+    graylog_data:
+    graylog_mongo_data:
+    graylog_elasticsearch_data:
+
+networks:
+    site_monitoring_net:

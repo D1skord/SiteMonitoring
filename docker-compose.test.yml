@@ -1,0 +1,39 @@
+services:
+    php:
+        build:
+            context: ./docker/php
+            args:
+                TIMEZONE: ${TIMEZONE:-Europe/Moscow}
+                UID: ${UID:-1000}
+                GID: ${GID:-1000}
+        environment:
+            APP_ENV: test
+            APP_SECRET: ${APP_SECRET:-change-me}
+            KERNEL_CLASS: ${KERNEL_CLASS:-App\Kernel}
+            SYMFONY_DEPRECATIONS_HELPER: ${SYMFONY_DEPRECATIONS_HELPER:-999999}
+            DATABASE_URL: ${DATABASE_URL}
+            MESSENGER_TRANSPORT_DSN: ${MESSENGER_TRANSPORT_DSN}
+        volumes:
+            - ./:/var/www/symfony
+        depends_on:
+            - postgres_test
+            - rabbitmq_test
+        networks:
+            - site_monitoring_test_net
+
+    postgres_test:
+        image: postgres:${POSTGRES_VERSION:-13}-alpine
+        environment:
+            POSTGRES_USER: ${POSTGRES_USER:-test}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-test}
+            POSTGRES_DB: ${POSTGRES_DB:-site_monitoring_test}
+        networks:
+            - site_monitoring_test_net
+
+    rabbitmq_test:
+        image: rabbitmq:3.10.7-management
+        networks:
+            - site_monitoring_test_net
+
+networks:
+    site_monitoring_test_net:

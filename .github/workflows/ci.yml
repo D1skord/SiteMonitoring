@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare test env
+        run: cp .env.test.example .env.test
+
+      - name: Run checks
+        run: make test
+
+      - name: Stop test containers
+        if: always()
+        run: make test-down

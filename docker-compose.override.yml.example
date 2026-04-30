@@ -1,0 +1,14 @@
+# Optional local Docker Compose overrides.
+# Copy this file to docker-compose.override.yml when you need machine-specific settings.
+
+services:
+    phppgadmin:
+        image: bitnami/phppgadmin
+        ports:
+            - "${PHPPGADMIN_PORT:-5434}:8080"
+        environment:
+            DATABASE_HOST: postgres
+        depends_on:
+            - postgres
+        networks:
+            - site_monitoring_net

@@ -1,0 +1,12 @@
+{% extends 'base.html.twig' %}
+{% form_theme form 'bootstrap_5_layout.html.twig' %}
+
+{% block title %}New Site{% endblock %}
+
+{% block body %}
+    <h1>Create new Site</h1>
+
+    {{ include('site/_form.html.twig') }}
+
+    <a href="{{ path('sites_index') }}">back to list</a>
+{% endblock %}
