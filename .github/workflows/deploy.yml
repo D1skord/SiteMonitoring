@@ -89,9 +89,14 @@ jobs:
             git remote set-url origin https://github.com/D1skord/SiteMonitoring.git
             git fetch origin master
             git reset --hard origin/master
-            docker compose --env-file .env -f docker-compose.prod.yml up -d --build --remove-orphans
-            docker compose --env-file .env -f docker-compose.prod.yml exec -T php composer install -n --no-dev --optimize-autoloader
-            docker compose --env-file .env -f docker-compose.prod.yml exec -T php bin/console doctrine:migrations:migrate -n
-            docker compose --env-file .env -f docker-compose.prod.yml exec -T php bin/console cache:clear --env=prod
-            docker compose --env-file .env -f docker-compose.prod.yml up -d --force-recreate worker
+            if docker compose version >/dev/null 2>&1; then
+              COMPOSE='docker compose -f docker-compose.prod.yml'
+            else
+              COMPOSE='docker-compose -f docker-compose.prod.yml'
+            fi
+            \$COMPOSE up -d --build --remove-orphans
+            \$COMPOSE exec -T php composer install -n --no-dev --optimize-autoloader
+            \$COMPOSE exec -T php bin/console doctrine:migrations:migrate -n
+            \$COMPOSE exec -T php bin/console cache:clear --env=prod
+            \$COMPOSE up -d --force-recreate worker
           "
