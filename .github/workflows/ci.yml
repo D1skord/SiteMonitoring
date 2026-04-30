@@ -15,7 +15,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Prepare test env
-        run: cp .env.test.example .env.test
+        run: |
+          cp .env.example .env
+          cp .env.test.example .env.test
 
       - name: Run checks
         run: make test
