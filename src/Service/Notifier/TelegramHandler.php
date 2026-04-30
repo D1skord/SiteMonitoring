@@ -14,10 +14,15 @@ class TelegramHandler implements NotifierHandlerInterface
 
     public function __construct(
         private HttpClientInterface $httpClient,
-        private LoggerInterface $logger
+        private LoggerInterface $logger,
+        string $telegramBotToken,
+        string $telegramChatId
     )
     {
-        $this->config = Notifier::TELEGRAM_DATA;
+        $this->config = [
+            'url' => sprintf('https://api.telegram.org/bot%s/sendMessage', $telegramBotToken),
+            'chat_id' => $telegramChatId,
+        ];
     }
 
     public function setConfig(array $data = []): self

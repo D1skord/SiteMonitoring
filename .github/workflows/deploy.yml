@@ -1,0 +1,97 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install SSH password client
+        run: sudo apt-get update && sudo apt-get install -y sshpass
+
+      - name: Create production env file
+        env:
+          APP_ENV: ${{ secrets.APP_ENV }}
+          APP_SECRET: ${{ secrets.APP_SECRET }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MESSENGER_TRANSPORT_DSN: ${{ secrets.MESSENGER_TRANSPORT_DSN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
+          NGINX_PORT: ${{ secrets.NGINX_PORT }}
+          TIMEZONE: ${{ secrets.TIMEZONE }}
+          APP_UID: ${{ secrets.UID }}
+          APP_GID: ${{ secrets.GID }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_VERSION: ${{ secrets.POSTGRES_VERSION }}
+          POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
+          RABBITMQ_PASS: ${{ secrets.RABBITMQ_PASS }}
+          RABBITMQ_MANAGEMENT_PORT: ${{ secrets.RABBITMQ_MANAGEMENT_PORT }}
+          GRAYLOG_PORT: ${{ secrets.GRAYLOG_PORT }}
+          GRAYLOG_GELF_PORT: ${{ secrets.GRAYLOG_GELF_PORT }}
+          GRAYLOG_ELASTICSEARCH_PORT: ${{ secrets.GRAYLOG_ELASTICSEARCH_PORT }}
+          GRAYLOG_PASSWORD_SECRET: ${{ secrets.GRAYLOG_PASSWORD_SECRET }}
+          GRAYLOG_ROOT_PASSWORD_SHA2: ${{ secrets.GRAYLOG_ROOT_PASSWORD_SHA2 }}
+        run: |
+          umask 077
+          {
+            printf 'APP_ENV=%s\n' "$APP_ENV"
+            printf 'APP_SECRET=%s\n' "$APP_SECRET"
+            printf 'DATABASE_URL=%s\n' "$DATABASE_URL"
+            printf 'MESSENGER_TRANSPORT_DSN=%s\n' "$MESSENGER_TRANSPORT_DSN"
+            printf 'TELEGRAM_BOT_TOKEN=%s\n' "$TELEGRAM_BOT_TOKEN"
+            printf 'TELEGRAM_CHAT_ID=%s\n' "$TELEGRAM_CHAT_ID"
+            printf 'DOMAIN_NAME=%s\n' "$DOMAIN_NAME"
+            printf 'NGINX_PORT=%s\n' "$NGINX_PORT"
+            printf 'TIMEZONE=%s\n' "$TIMEZONE"
+            printf 'UID=%s\n' "$APP_UID"
+            printf 'GID=%s\n' "$APP_GID"
+            printf 'POSTGRES_USER=%s\n' "$POSTGRES_USER"
+            printf 'POSTGRES_PASSWORD=%s\n' "$POSTGRES_PASSWORD"
+            printf 'POSTGRES_DB=%s\n' "$POSTGRES_DB"
+            printf 'POSTGRES_VERSION=%s\n' "$POSTGRES_VERSION"
+            printf 'POSTGRES_PORT=%s\n' "$POSTGRES_PORT"
+            printf 'RABBITMQ_PASS=%s\n' "$RABBITMQ_PASS"
+            printf 'RABBITMQ_MANAGEMENT_PORT=%s\n' "$RABBITMQ_MANAGEMENT_PORT"
+            printf 'GRAYLOG_PORT=%s\n' "$GRAYLOG_PORT"
+            printf 'GRAYLOG_GELF_PORT=%s\n' "$GRAYLOG_GELF_PORT"
+            printf 'GRAYLOG_ELASTICSEARCH_PORT=%s\n' "$GRAYLOG_ELASTICSEARCH_PORT"
+            printf 'GRAYLOG_PASSWORD_SECRET=%s\n' "$GRAYLOG_PASSWORD_SECRET"
+            printf 'GRAYLOG_ROOT_PASSWORD_SHA2=%s\n' "$GRAYLOG_ROOT_PASSWORD_SHA2"
+          } > .deploy.env
+
+      - name: Upload production env file
+        env:
+          VDS_HOST: ${{ secrets.VDS_HOST }}
+          VDS_USER: ${{ secrets.VDS_USER }}
+          VDS_PORT: ${{ secrets.VDS_PORT }}
+          VDS_PASSWORD: ${{ secrets.VDS_PASSWORD }}
+          PROD_DIR: ${{ secrets.PROD_DIR }}
+        run: |
+          sshpass -p "$VDS_PASSWORD" ssh -p "$VDS_PORT" -o StrictHostKeyChecking=no "$VDS_USER@$VDS_HOST" "mkdir -p '$PROD_DIR'"
+          sshpass -p "$VDS_PASSWORD" scp -P "$VDS_PORT" -o StrictHostKeyChecking=no .deploy.env "$VDS_USER@$VDS_HOST:$PROD_DIR/.env"
+
+      - name: Deploy on VDS
+        env:
+          VDS_HOST: ${{ secrets.VDS_HOST }}
+          VDS_USER: ${{ secrets.VDS_USER }}
+          VDS_PORT: ${{ secrets.VDS_PORT }}
+          VDS_PASSWORD: ${{ secrets.VDS_PASSWORD }}
+          PROD_DIR: ${{ secrets.PROD_DIR }}
+        run: |
+          sshpass -p "$VDS_PASSWORD" ssh -p "$VDS_PORT" -o StrictHostKeyChecking=no "$VDS_USER@$VDS_HOST" "
+            set -e
+            cd '$PROD_DIR'
+            git remote set-url origin https://github.com/D1skord/SiteMonitoring.git
+            git fetch origin master
+            git reset --hard origin/master
+            docker compose --env-file .env -f docker-compose.prod.yml up -d --build --remove-orphans
+            docker compose --env-file .env -f docker-compose.prod.yml exec -T php composer install -n --no-dev --optimize-autoloader
+            docker compose --env-file .env -f docker-compose.prod.yml exec -T php bin/console doctrine:migrations:migrate -n
+            docker compose --env-file .env -f docker-compose.prod.yml exec -T php bin/console cache:clear --env=prod
+            docker compose --env-file .env -f docker-compose.prod.yml up -d --force-recreate worker
+          "

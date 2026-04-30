@@ -27,6 +27,32 @@ services:
             APP_SECRET: ${APP_SECRET}
             DATABASE_URL: ${DATABASE_URL}
             MESSENGER_TRANSPORT_DSN: ${MESSENGER_TRANSPORT_DSN}
+            TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+            TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+        volumes:
+            - ./:/var/www/symfony
+        depends_on:
+            - postgres
+            - rabbitmq
+        networks:
+            - site_monitoring_net
+
+    worker:
+        build:
+            context: ./docker/php
+            args:
+                TIMEZONE: ${TIMEZONE:-Europe/Moscow}
+                UID: ${UID:-1000}
+                GID: ${GID:-1000}
+        command: php bin/console messenger:consume async -vv
+        restart: unless-stopped
+        environment:
+            APP_ENV: prod
+            APP_SECRET: ${APP_SECRET}
+            DATABASE_URL: ${DATABASE_URL}
+            MESSENGER_TRANSPORT_DSN: ${MESSENGER_TRANSPORT_DSN}
+            TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+            TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
         volumes:
             - ./:/var/www/symfony
         depends_on:
