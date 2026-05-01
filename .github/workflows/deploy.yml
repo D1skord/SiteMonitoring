@@ -90,5 +90,5 @@ jobs:
             \$COMPOSE exec -T php composer install -n --no-dev --optimize-autoloader
             \$COMPOSE exec -T php bin/console doctrine:migrations:migrate -n
             \$COMPOSE exec -T php bin/console cache:clear --env=prod
-            \$COMPOSE up -d --force-recreate worker
+            \$COMPOSE up -d --force-recreate worker scheduler
           "

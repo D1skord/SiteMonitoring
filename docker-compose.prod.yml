@@ -63,6 +63,30 @@ services:
         networks:
             - site_monitoring_net
 
+    scheduler:
+        build:
+            context: ./docker/php
+            args:
+                TIMEZONE: ${TIMEZONE}
+                UID: ${UID}
+                GID: ${GID}
+        command: sh -c "printenv > /etc/environment && cp /var/www/symfony/docker/cron/site-monitoring /etc/cron.d/site-monitoring && chmod 0644 /etc/cron.d/site-monitoring && cron -f"
+        restart: unless-stopped
+        environment:
+            APP_ENV: prod
+            APP_SECRET: ${APP_SECRET}
+            DATABASE_URL: ${DATABASE_URL}
+            MESSENGER_TRANSPORT_DSN: ${MESSENGER_TRANSPORT_DSN}
+            TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+            TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+        volumes:
+            - ./:/var/www/symfony
+        depends_on:
+            - postgres
+            - rabbitmq
+        networks:
+            - site_monitoring_net
+
     postgres:
         image: postgres:${POSTGRES_VERSION}-alpine
         ports:

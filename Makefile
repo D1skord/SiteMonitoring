@@ -78,6 +78,11 @@ migration-migrate: env-init ##@symfony Run migrations
 fixtures-add-all: env-init ##Команда для загрузки всех фикстур
 	$(EXEC) bin/console doctrine:fixtures:load
 
+user-create: env-init ##@commands Создание пользователя: make user-create [email=user@example.com] [password=secret]
+	@read -p "Email: " input_email; \
+	email="$${input_email:-$(email)}"; \
+	$(EXEC_TTY) bin/console app:user:create "$$email" $(if $(password),--password=$(password),)
+
 test-up: test-env-init ##@test Start test containers
 	$(TEST_COMPOSE) up -d --build --force-recreate --remove-orphans
 

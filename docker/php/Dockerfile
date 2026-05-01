@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libxslt1-dev \
     acl \
+    cron \
     whois \
     && echo 'alias sf="php bin/console"' >> ~/.bashrc
 
