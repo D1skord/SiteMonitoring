@@ -55,53 +55,8 @@ services:
         networks:
             - site_monitoring_net
 
-    graylog_mongo:
-        image: mongo:5.0.13
-        volumes:
-            - graylog_mongo_data:/data/db
-        networks:
-            - site_monitoring_net
-
-    graylog_elasticsearch:
-        image: docker.elastic.co/elasticsearch/elasticsearch-oss:7.10.2
-        environment:
-            discovery.type: single-node
-            cluster.name: docker-cluster
-            bootstrap.memory_lock: "true"
-            ES_JAVA_OPTS: "-Xms512m -Xmx512m"
-        ulimits:
-            memlock:
-                soft: -1
-                hard: -1
-        volumes:
-            - graylog_elasticsearch_data:/usr/share/elasticsearch/data
-        ports:
-            - "${GRAYLOG_ELASTICSEARCH_PORT:-9200}:9200"
-        networks:
-            - site_monitoring_net
-
-    graylog:
-        image: graylog/graylog:5.0
-        environment:
-            GRAYLOG_PASSWORD_SECRET: ${GRAYLOG_PASSWORD_SECRET:-change-me}
-            GRAYLOG_ROOT_PASSWORD_SHA2: ${GRAYLOG_ROOT_PASSWORD_SHA2:-change-me}
-            GRAYLOG_HTTP_EXTERNAL_URI: http://127.0.0.1:${GRAYLOG_PORT:-9000}/
-        volumes:
-            - graylog_data:/usr/share/graylog/data/data
-        ports:
-            - "${GRAYLOG_PORT:-9000}:9000"
-            - "${GRAYLOG_GELF_PORT:-12201}:12201/udp"
-        depends_on:
-            - graylog_mongo
-            - graylog_elasticsearch
-        networks:
-            - site_monitoring_net
-
 volumes:
     postgres_data:
-    graylog_data:
-    graylog_mongo_data:
-    graylog_elasticsearch_data:
 
 networks:
     site_monitoring_net:

@@ -31,11 +31,6 @@ jobs:
           POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
           RABBITMQ_PASS: ${{ secrets.RABBITMQ_PASS }}
           RABBITMQ_MANAGEMENT_PORT: ${{ secrets.RABBITMQ_MANAGEMENT_PORT }}
-          GRAYLOG_PORT: ${{ secrets.GRAYLOG_PORT }}
-          GRAYLOG_GELF_PORT: ${{ secrets.GRAYLOG_GELF_PORT }}
-          GRAYLOG_ELASTICSEARCH_PORT: ${{ secrets.GRAYLOG_ELASTICSEARCH_PORT }}
-          GRAYLOG_PASSWORD_SECRET: ${{ secrets.GRAYLOG_PASSWORD_SECRET }}
-          GRAYLOG_ROOT_PASSWORD_SHA2: ${{ secrets.GRAYLOG_ROOT_PASSWORD_SHA2 }}
         run: |
           umask 077
           {
@@ -57,11 +52,6 @@ jobs:
             printf 'POSTGRES_PORT=%s\n' "$POSTGRES_PORT"
             printf 'RABBITMQ_PASS=%s\n' "$RABBITMQ_PASS"
             printf 'RABBITMQ_MANAGEMENT_PORT=%s\n' "$RABBITMQ_MANAGEMENT_PORT"
-            printf 'GRAYLOG_PORT=%s\n' "$GRAYLOG_PORT"
-            printf 'GRAYLOG_GELF_PORT=%s\n' "$GRAYLOG_GELF_PORT"
-            printf 'GRAYLOG_ELASTICSEARCH_PORT=%s\n' "$GRAYLOG_ELASTICSEARCH_PORT"
-            printf 'GRAYLOG_PASSWORD_SECRET=%s\n' "$GRAYLOG_PASSWORD_SECRET"
-            printf 'GRAYLOG_ROOT_PASSWORD_SHA2=%s\n' "$GRAYLOG_ROOT_PASSWORD_SHA2"
           } > .deploy.env
 
       - name: Upload production env file

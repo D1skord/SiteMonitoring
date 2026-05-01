@@ -10,7 +10,6 @@
     "doctrine/doctrine-bundle": "^2.8",
     "doctrine/doctrine-migrations-bundle": "^3.2",
     "doctrine/orm": "^2.14",
-    "graylog2/gelf-php": "^2.0",
     "guzzlehttp/guzzle": "^7.7",
     "nelmio/api-doc-bundle": "^4.11",
     "symfony/amqp-messenger": "^7.2",
