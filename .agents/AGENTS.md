@@ -153,12 +153,13 @@ Site Monitoring Project - Symfony-приложение для мониторин
 - Коллекция обработчиков: `App\Service\Notifier\NotifierHandlerCollection`.
 - Интерфейс обработчика: `NotifierHandlerInterface`.
 - Реализация: `TelegramHandler`.
-- Настройки Telegram лежат в `App\Model\Notifier\Notifier`; значения токенов/чатов не дублировать в ответах.
+- Настройки Telegram приходят из env-переменных `TELEGRAM_BOT_TOKEN` и `TELEGRAM_CHAT_ID`; значения токенов/чатов не дублировать в ответах.
 
 ## База Данных И Миграции
 
 - Миграции лежат в `migrations/`.
 - Основные таблицы: `site`, `status_log`, `expire_date`, `payment_info`, `user`.
+- Production-пользователя создавать или сбрасывать через `php bin/console app:user:create email@example.com`; команда интерактивно спросит пароль и работает без dev-зависимостей.
 - Создание и применение миграций:
 
 ```sh
@@ -235,9 +236,49 @@ cp docker-compose.override.yml.example docker-compose.override.yml
 
 ## CI/CD
 
-- `.gitlab-ci.yml` собирает Docker-окружение, ставит Composer-зависимости, применяет миграции, грузит fixtures, запускает PHPUnit и PHPStan.
-- Deploy job ручной и работает только для `master`.
-- CI использует внешние переменные и SSH. Не запускать деплой без прямого подтверждения.
+- GitHub Actions:
+  - `.github/workflows/ci.yml` запускается на push в `master` и pull request;
+  - `.github/workflows/deploy.yml` запускается вручную через `workflow_dispatch`.
+- CI собирает test Docker-окружение, ставит Composer-зависимости, создает test DB, применяет миграции, запускает PHPUnit и PHPStan через `make test`.
+- Deploy работает через GitHub Secrets, password-based SSH на VDS и production `.env`, который создается из secrets во время workflow.
+- Не запускать деплой без прямого подтверждения пользователя.
+
+### Операция "Раскатай"
+
+Если пользователь просит "раскатай", "отправляем и раскатываем" или аналогично, действуй по этому чеклисту:
+
+1. Проверить состояние:
+   - `git status --short --branch`;
+   - убедиться, что в worktree нет несвязанных чужих правок.
+2. Проверить изменения:
+   - для PHP-файлов `php -l path/to/file.php`;
+   - для compose `docker compose --env-file .env.example -f docker-compose.prod.yml config --quiet`, если менялся prod compose;
+   - для широких изменений `cp .env.example .env && cp .env.test.example .env.test && make test`.
+3. После успешных проверок:
+   - `git add` только релевантных файлов;
+   - `git commit -m "..."`;
+   - `git push origin master`.
+4. Проверить GitHub Actions:
+   - `gh run list --repo D1skord/SiteMonitoring --limit 5`;
+   - дождаться зеленого CI run для текущего commit через `gh run watch <run_id> --repo D1skord/SiteMonitoring --exit-status`.
+5. Запустить ручной deploy:
+   - `gh workflow run Deploy --repo D1skord/SiteMonitoring --ref master`;
+   - найти run через `gh run list --repo D1skord/SiteMonitoring --workflow Deploy --limit 3`;
+   - дождаться результата через `gh run watch <run_id> --repo D1skord/SiteMonitoring --exit-status`.
+6. После deploy проверить сайт:
+   - `curl --max-time 15 -I http://sitemonitoring.vinichenko-ivan.ru/`;
+   - `curl --max-time 15 -k -I https://sitemonitoring.vinichenko-ivan.ru/`;
+   - если TLS-сертификат невалиден, отдельно сказать, что приложение работает, но верхний nginx/сертификат требуют настройки.
+
+Текущая production-схема:
+
+- GitHub secret `VDS_HOST` должен быть IP VDS, не домен.
+- GitHub secret `DOMAIN_NAME` должен быть `sitemonitoring.vinichenko-ivan.ru`.
+- Верхний nginx на VDS проксирует `sitemonitoring.vinichenko-ivan.ru` на `127.0.0.1:8082`.
+- GitHub secret `NGINX_PORT` должен быть `8082`.
+- Production project path: `/var/www/vinichenko/data/www/sitemonitoring.vinichenko-ivan.ru`.
+- Production deploy использует `docker-compose.prod.yml`; на сервере может быть старый `docker-compose`, поэтому prod compose держится совместимым с `version: "3.3"` и без `${VAR:-default}`.
+- Production queue worker - отдельный service `worker`, который запускает `php bin/console messenger:consume async -vv`.
 
 ## Правила Изменений
 
