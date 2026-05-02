@@ -24,16 +24,6 @@
         <td>{{ site.expireDate ? site.expireDate.ssl|date("d.m.Y")|default(null) }}</td>
 
         <tr>
-            <th>Дата оплаты</th>
-            <td>{{ site.paymentInfo ? site.paymentInfo.paymentDate|date("d.m.Y")|default(null) }}</td>
-        </tr>
-
-        <tr>
-            <th>Сумма</th>
-            <td>{{ site.paymentInfo ? site.paymentInfo.cost|default(null) }}</td>
-        </tr>
-
-        <tr>
             <th>Дата окончания домена</th>
             <td>{{ site.expireDate ? site.expireDate.domain|date("d.m.Y")|default(null) }}</td>
         </tr>

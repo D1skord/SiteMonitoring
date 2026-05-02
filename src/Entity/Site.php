@@ -33,10 +33,6 @@ class Site
     #[JoinColumn(nullable: true)]
     private ?ExpireDate $expireDate = null;
 
-    #[OneToOne(targetEntity: PaymentInfo::class, cascade: ['persist', 'remove'])]
-    #[JoinColumn(nullable: true)]
-    private ?PaymentInfo $paymentInfo = null;
-
     #[ORM\Column(nullable: true)]
     private array $transport = [];
 
@@ -138,14 +134,4 @@ class Site
         $this->expireDate = $expireDate;
     }
 
-    public function getPaymentInfo(): ?PaymentInfo
-    {
-        return $this->paymentInfo;
-    }
-
-    public function setPaymentInfo(?PaymentInfo $paymentInfo): Site
-    {
-        $this->paymentInfo = $paymentInfo;
-        return $this;
-    }
 }

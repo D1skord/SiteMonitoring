@@ -5,7 +5,7 @@
 ## Быстрый Старт
 
 - Рабочий стек: Symfony 7.2, PHP `^8.4` по `composer.json`, Doctrine ORM, Twig, Messenger, PostgreSQL, RabbitMQ, Graylog, Docker.
-- Приложение мониторит сайты: хранит сайты, HTTP-статусы, даты окончания домена/SSL и даты оплаты поддержки, затем отправляет уведомления через Messenger.
+- Приложение мониторит сайты: хранит сайты, HTTP-статусы и даты окончания домена/SSL, затем отправляет уведомления через Messenger.
 - Основные проверки: `make phpunit`, `make phpstan`, `make test`.
 - Основной запуск: `make build`, затем `make up`; приложение ожидается на `http://site-monitoring.local`.
 
@@ -34,7 +34,6 @@ make msg
 make check-site-status
 make check-site-domain-expire siteId=1
 make check-site-ssl-expire siteId=1
-make check-site-payment-date
 ```
 
 ## Проверка После Изменений
@@ -53,7 +52,6 @@ Site Monitoring Project - Symfony-приложение для мониторин
 - сохраняет историю статусов;
 - проверяет срок действия домена через `whois`;
 - проверяет срок действия SSL через `openssl`;
-- хранит дату следующей оплаты поддержки;
 - отправляет уведомления через Symfony Messenger и обработчики notifier.
 
 ## Стек
@@ -88,15 +86,12 @@ Site Monitoring Project - Symfony-приложение для мониторин
 - `App\Entity\Site`
   - `name`, `url`, текущий `status`, массив `transport`;
   - `OneToMany` к `StatusLog`;
-  - `OneToOne` к `ExpireDate`;
-  - `OneToOne` к `PaymentInfo`.
+  - `OneToOne` к `ExpireDate`.
 - `App\Entity\StatusLog`
   - HTTP status, timestamp, ссылка на `Site`.
 - `App\Entity\ExpireDate`
   - даты `domain`, `ssl`, `updatedAt`;
   - `updatedAt` обновляется lifecycle callback на persist/update.
-- `App\Entity\PaymentInfo`
-  - стоимость поддержки и дата оплаты.
 - `App\Entity\User`
   - email, password, roles;
   - `getRoles()` всегда добавляет `ROLE_ADMIN`.
@@ -121,15 +116,21 @@ Site Monitoring Project - Symfony-приложение для мониторин
   - если статус не `200`, dispatch-ит `App\Message\Notifier`;
   - пишет `StatusLog`.
 
-### Проверка оплаты поддержки
+### Диаграмма статусов сайта
 
-- Команда: `site:check-payment-date`.
-- Make target: `make check-site-payment-date`.
-- Сервис: `App\Service\PaymentInfoService`.
-- Логика:
-  - смотрит `Site::paymentInfo.paymentDate`;
-  - если дата меньше или равна текущей дате, отправляет уведомление;
-  - переносит дату на период из `App\Model\PaymentInfoModel::PAYMENT_PERIOD_MODIFIER`.
+- Страница: `GET /sites/{id}`.
+- Контроллер: `SiteController::show()`.
+- Twig: `templates/site/show.html.twig`.
+- Источник данных: `StatusLogRepository::findBySiteSince(Site $site, DateTimeInterface $since)`.
+- Период: последние 24 часа.
+- Ожидаемая частота точек: одна точка на cron-проверку, то есть примерно каждые 5 минут.
+- Фронт: Chart.js уже подключен глобально в `templates/base.html.twig`; отдельный frontend build для этой диаграммы не нужен.
+- Формат данных:
+  - `statusChartLabels` - подписи времени в формате `d.m H:i`;
+  - `statusChartData` - HTTP-коды.
+- Визуальное правило: статус `200` показывается зеленой точкой, остальные статусы - красной.
+- Данные графика кешируются через Symfony `CacheInterface` на 300 секунд под ключом `site_status_chart_{siteId}_24h`.
+- TTL 300 секунд выбран под cron `site:check-status`, который запускается раз в 5 минут.
 
 ### Проверка домена и SSL
 
@@ -158,7 +159,7 @@ Site Monitoring Project - Symfony-приложение для мониторин
 ## База Данных И Миграции
 
 - Миграции лежат в `migrations/`.
-- Основные таблицы: `site`, `status_log`, `expire_date`, `payment_info`, `user`.
+- Основные таблицы: `site`, `status_log`, `expire_date`, `user`.
 - Production-пользователя создавать или сбрасывать через `php bin/console app:user:create email@example.com`; команда интерактивно спросит пароль и работает без dev-зависимостей.
 - Создание и применение миграций:
 
@@ -173,6 +174,30 @@ make migration-migrate
 make create-test-db
 ```
 
+## Кеш
+
+- Symfony `cache.app` по умолчанию использует файловый кеш; отдельный Redis/Memcached в проект пока не добавлен.
+- Для диаграммы статусов сайта используется ключ `site_status_chart_{siteId}_24h`, например `site_status_chart_1_24h`.
+- Смотреть доступные cache pools:
+
+```sh
+docker compose exec -T scheduler php bin/console cache:pool:list
+```
+
+- Удалить кеш конкретной диаграммы:
+
+```sh
+docker compose exec -T scheduler php bin/console cache:pool:delete cache.app site_status_chart_1_24h
+```
+
+- Очистить весь `cache.app`:
+
+```sh
+docker compose exec -T scheduler php bin/console cache:pool:clear cache.app
+```
+
+- Физически файловый кеш лежит в `var/cache/{env}/pools/`, но имена файлов хешированные; для просмотра и очистки предпочитай команды `bin/console`.
+
 ## Тесты
 
 - Unit tests: `tests/Unit`.
@@ -182,11 +207,11 @@ make create-test-db
   - `tests/Utils/UnitTest.php`;
   - `tests/Utils/WebTest.php`.
 - `phpunit.xml.dist` сейчас включает suites `Unit` и `Functional`; `Integration` не входит в объявленные suites, но тесты физически есть.
+- В test-окружении есть известная проблема: `config/services_test.yaml` импортирует `App\Tests\` из `../tests/`, из-за чего Symfony пытается загрузить `tests/bootstrap.php` как класс `App\Tests\bootstrap`. Это может ломать integration/web tests до исправления exclude для bootstrap-файла.
 - Fixtures:
   - `src/DataFixtures/AppFixtures.php`;
   - `src/DataFixtures/SiteFixture.php`;
-  - `src/DataFixtures/StatusLogFixture.php`;
-  - `src/DataFixtures/PaymentInfoFixture.php`.
+  - `src/DataFixtures/StatusLogFixture.php`.
 
 Команды:
 
@@ -292,7 +317,6 @@ cp docker-compose.override.yml.example docker-compose.override.yml
 ## Зоны Осторожности
 
 - Команды `whois` и `openssl` зависят от внешней сети и системных утилит.
-- `PaymentInfoService::isPaymentDateNeedToUpdate()` сравнивает строки формата `d/m/Y`; менять осторожно и только с тестами.
 - `NotifierHandler` ожидает, что у сайта есть `transport` и соответствующие notifier handlers.
 - В `services.yaml` и `NotifierHandlerInterface` используются похожие, но разные имена тегов (`notifier_handler` и `notifier.handler`); перед правками notifier-системы проверь контейнер и тесты.
 - README может отставать от кода: например, версия PHP в README отличается от требования `composer.json`.

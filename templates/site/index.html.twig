@@ -11,8 +11,6 @@
             <th>Название</th>
             <th>Ссылка</th>
             <th>Статус</th>
-            <th>Дата оплаты</th>
-            <th>Сумма</th>
             <th>Домен истекает</th>
             <th>SSL истекает</th>
             <th></th>
@@ -24,8 +22,6 @@
                 <td><a href="{{ path('sites_show', {'id': site.id}) }}">{{ site.name }}</a></td>
                 <td><a target="_blank" href="{{ site.url }}">{{ site.url }}</a></td>
                 <td>{{ site.statusLogs[0].getStatus|default(null) }}</td>
-                <td>{{ site.paymentInfo ? site.paymentInfo.paymentDate|date("d.m.Y")|default(null) }}</td>
-                <td>{{ site.paymentInfo ? site.paymentInfo.cost|default(null) }}</td>
                 <td>{{ site.expireDate ? site.expireDate.domain|date("d.m.Y")|default(null) }}</td>
                 <td>{{ site.expireDate ? site.expireDate.ssl|date("d.m.Y")|default(null) }}</td>
                 <td>
@@ -34,7 +30,7 @@
             </tr>
         {% else %}
             <tr>
-                <td colspan="5">Список пуст</td>
+                <td colspan="6">Список пуст</td>
             </tr>
         {% endfor %}
         </tbody>

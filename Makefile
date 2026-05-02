@@ -120,8 +120,5 @@ check-site-domain-expire: env-init ##@commands Проверка даты око�
 check-site-ssl-expire: env-init ##@commands Проверка даты окончания ssl-сертификата
 	$(CONSOLE) site:check-ssl-expire $(siteId)
 
-check-site-payment-date: env-init ##@commands Проверка даты оплаты поддержки
-	$(CONSOLE) site:check-payment-date
-
 msg: env-init ##Запуск обработки всех очередей
 	$(MESSENGER) async -vv
