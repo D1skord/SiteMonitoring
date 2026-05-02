@@ -46,7 +46,8 @@ services:
                 TIMEZONE: ${TIMEZONE}
                 UID: ${UID}
                 GID: ${GID}
-        command: php bin/console messenger:consume async -vv
+        command: >
+            sh -c 'until php -r "exit(@fsockopen(\"rabbitmq\", 5672) ? 0 : 1);"; do echo "Waiting for RabbitMQ..."; sleep 2; done; exec php bin/console messenger:consume async -vv'
         restart: unless-stopped
         environment:
             APP_ENV: prod
@@ -70,7 +71,8 @@ services:
                 TIMEZONE: ${TIMEZONE}
                 UID: ${UID}
                 GID: ${GID}
-        command: sh -c "printenv > /etc/environment && cp /var/www/symfony/docker/cron/site-monitoring /etc/cron.d/site-monitoring && chmod 0644 /etc/cron.d/site-monitoring && cron -f"
+        command: >
+            sh -c 'until php -r "exit(@fsockopen(\"rabbitmq\", 5672) ? 0 : 1);"; do echo "Waiting for RabbitMQ..."; sleep 2; done; printenv > /etc/environment && cp /var/www/symfony/docker/cron/site-monitoring /etc/cron.d/site-monitoring && chmod 0644 /etc/cron.d/site-monitoring && cron -f'
         restart: unless-stopped
         environment:
             APP_ENV: prod
@@ -97,6 +99,11 @@ services:
             POSTGRES_DB: ${POSTGRES_DB}
         volumes:
             - postgres_data:/var/lib/postgresql/data
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+            interval: 10s
+            timeout: 5s
+            retries: 12
         networks:
             - site_monitoring_net
 
@@ -106,6 +113,12 @@ services:
             RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
         ports:
             - "${RABBITMQ_MANAGEMENT_PORT}:15672"
+        healthcheck:
+            test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+            interval: 10s
+            timeout: 5s
+            retries: 12
+            start_period: 20s
         networks:
             - site_monitoring_net
 
