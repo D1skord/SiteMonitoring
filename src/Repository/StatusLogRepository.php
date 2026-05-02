@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Entity\Site;
 use App\Entity\StatusLog;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -37,6 +38,21 @@ class StatusLogRepository extends ServiceEntityRepository
         if ($flush) {
             $this->getEntityManager()->flush();
         }
+    }
+
+    /**
+     * @return StatusLog[]
+     */
+    public function findBySiteSince(Site $site, \DateTimeInterface $since): array
+    {
+        return $this->createQueryBuilder('statusLog')
+            ->andWhere('statusLog.site = :site')
+            ->andWhere('statusLog.timestamp >= :since')
+            ->setParameter('site', $site)
+            ->setParameter('since', $since)
+            ->orderBy('statusLog.timestamp', 'ASC')
+            ->getQuery()
+            ->getResult();
     }
 
 //    /**

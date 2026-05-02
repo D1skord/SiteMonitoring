@@ -6,11 +6,15 @@ use App\Entity\Site;
 use App\Event\SiteCheckExpireDateEvent;
 use App\Form\SiteType;
 use App\Repository\SiteRepository;
+use App\Repository\StatusLogRepository;
+use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 
@@ -46,10 +50,32 @@ class SiteController extends AbstractController
     }
 
     #[Route('/{id}', name: 'sites_show', methods: ['GET'])]
-    public function show(Site $site): Response
+    public function show(Site $site, StatusLogRepository $statusLogRepository, CacheInterface $cache): Response
     {
+        $statusChart = $cache->get(
+            "site_status_chart_{$site->getId()}_24h",
+            static function (ItemInterface $item) use ($site, $statusLogRepository): array {
+                $item->expiresAfter(300);
+
+                $statusLogs = $statusLogRepository->findBySiteSince($site, new DateTimeImmutable('-24 hours'));
+
+                return [
+                    'labels' => array_map(
+                        static fn ($statusLog): string => $statusLog->getTimestamp()->format('d.m H:i'),
+                        $statusLogs
+                    ),
+                    'data' => array_map(
+                        static fn ($statusLog): ?int => $statusLog->getStatus(),
+                        $statusLogs
+                    ),
+                ];
+            }
+        );
+
         return $this->render('site/show.html.twig', [
             'site' => $site,
+            'statusChartLabels' => $statusChart['labels'],
+            'statusChartData' => $statusChart['data'],
         ]);
     }
 
