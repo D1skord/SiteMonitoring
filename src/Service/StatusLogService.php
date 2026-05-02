@@ -8,7 +8,6 @@ use App\Entity\Site;
 use App\Entity\StatusLog;
 use App\Message\Notifier;
 use App\Repository\SiteRepository;
-use App\Repository\StatusLogRepository;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;
@@ -30,35 +29,47 @@ class StatusLogService
     }
 
     /**
-     * Проверяет статусы всех сайтов и отправляет уведомление, если статус плохой
-     *
-     * @throws TransportExceptionInterface
+     * Проверяет статусы всех сайтов и отправляет уведомление, если статус изменился.
      */
     public function checkSiteStatuses(): int
     {
         $sites = $this->siteRepository->findAll();
 
         foreach ($sites as $site) {
-            $status = $this->httpClient->request('GET', $site->getUrl())->getStatusCode();
-            $this->sendNoticeIfBadStatus($site, $status);
+            $previousStatus = $site->getStatus();
+            $status = $this->getSiteStatus($site);
+
+            $site->setStatus($status);
+            $this->sendNoticeIfStatusChanged($site, $previousStatus, $status);
             $this->insertStatusLog($site, $status);
         }
 
         return Command::SUCCESS;
     }
 
-    /**
-     * Отправляет уведомление, если статус плохой
-     */
-    private function sendNoticeIfBadStatus(Site $site, int $status): bool
+    private function getSiteStatus(Site $site): int
     {
-        if (!$this->isStatusSuccess($status)) {
-            $this->bus->dispatch(new Notifier("У сайта {$site->getName()} статус {$status}", $site->getId()));
-            return true;
+        try {
+            return $this->httpClient->request('GET', $site->getUrl())->getStatusCode();
+        } catch (TransportExceptionInterface) {
+            return 0;
         }
-        return false;
     }
 
+    private function sendNoticeIfStatusChanged(Site $site, ?int $previousStatus, int $status): bool
+    {
+        if ($previousStatus === $status || ($previousStatus === null && $this->isStatusSuccess($status))) {
+            return false;
+        }
+
+        $message = $this->isStatusSuccess($status)
+            ? "Сайт {$site->getName()} восстановился, статус {$status}"
+            : "У сайта {$site->getName()} статус {$status}";
+
+        $this->bus->dispatch(new Notifier($message, $site->getId()));
+
+        return true;
+    }
 
     public function isStatusSuccess(int $status): bool
     {
