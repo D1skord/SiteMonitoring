@@ -1,4 +1,7 @@
-<form method="post" class="mt-3" action="{{ path('sites_delete', {'id': site.id}) }}" onsubmit="return confirm('Are you sure you want to delete this item?');">
+<form method="post" class="{{ compact|default(false) ? 'm-0' : 'mt-3' }}" action="{{ path('sites_delete', {'id': site.id}) }}" onsubmit="return confirm('Удалить этот сайт?');">
     <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ site.id) }}">
-    <button class="btn btn-danger">Удалить</button>
+    <button class="btn btn-danger">
+        <i class="fa-solid fa-trash-can me-1"></i>
+        Удалить
+    </button>
 </form>

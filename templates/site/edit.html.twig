@@ -4,9 +4,33 @@
 {% block title %}Edit Site{% endblock %}
 
 {% block body %}
-    <h1>Edit Site</h1>
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mt-4 mb-4">
+        <div>
+            <h1 class="mb-1">Редактирование сайта</h1>
+            <div class="text-muted">{{ site.name }}</div>
+        </div>
+        <a class="btn btn-light" href="{{ path('sites_show', {'id': site.id}) }}">
+            <i class="fa-solid fa-arrow-left me-1"></i>
+            К сайту
+        </a>
+    </div>
 
-    {{ include('site/_form.html.twig', {'button_label': 'Update'}) }}
+    {{ include('site/_form.html.twig', {
+        'button_label': 'Сохранить изменения',
+        'cancel_path': path('sites_show', {'id': site.id})
+    }) }}
 
-    {{ include('site/_delete_form.html.twig') }}
+    <div class="card border-danger mb-4">
+        <div class="card-header text-danger">
+            <i class="fa-solid fa-triangle-exclamation me-1"></i>
+            Опасная зона
+        </div>
+        <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div>
+                <div class="fw-semibold">Удалить сайт</div>
+                <div class="text-muted small">Будут удалены сам сайт и связанные с ним записи мониторинга.</div>
+            </div>
+            {{ include('site/_delete_form.html.twig', {'compact': true}) }}
+        </div>
+    </div>
 {% endblock %}

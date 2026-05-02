@@ -9,6 +9,7 @@ use App\Service\StatusLogService;
 use App\Tests\Utils\UnitTest;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\MockObject\MockObject;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
@@ -17,10 +18,10 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 class StatusLogServiceTest extends UnitTest
 {
     private StatusLogService $statusLogService;
-    private HttpClientInterface $httpClient;
-    private EntityManagerInterface $entityManager;
-    private SiteRepository $siteRepository;
-    private MessageBusInterface $bus;
+    private HttpClientInterface&MockObject $httpClient;
+    private EntityManagerInterface&MockObject $entityManager;
+    private SiteRepository&MockObject $siteRepository;
+    private MessageBusInterface&MockObject $bus;
 
     protected function setUp(): void
     {
