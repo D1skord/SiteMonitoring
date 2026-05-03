@@ -88,7 +88,7 @@ Site Monitoring Project - Symfony-приложение для мониторин
   - `OneToMany` к `StatusLog`;
   - `OneToOne` к `ExpireDate`.
 - `App\Entity\StatusLog`
-  - HTTP status, timestamp, ссылка на `Site`.
+  - HTTP status, response time в миллисекундах, timestamp, ссылка на `Site`.
 - `App\Entity\ExpireDate`
   - даты `domain`, `ssl`, `updatedAt`;
   - `updatedAt` обновляется lifecycle callback на persist/update.
@@ -113,6 +113,8 @@ Site Monitoring Project - Symfony-приложение для мониторин
 - Логика:
   - берет все сайты из `SiteRepository`;
   - делает GET на `Site::url`;
+  - берет response time из `ResponseInterface::getInfo('total_time')` и сохраняет его как `responseTimeMs`;
+  - если HTTP-запрос падает с `TransportExceptionInterface`, пишет статус `0`, а `responseTimeMs` оставляет `null`;
   - если статус не `200`, dispatch-ит `App\Message\Notifier`;
   - пишет `StatusLog`.
 
@@ -127,9 +129,10 @@ Site Monitoring Project - Symfony-приложение для мониторин
 - Фронт: Chart.js уже подключен глобально в `templates/base.html.twig`; отдельный frontend build для этой диаграммы не нужен.
 - Формат данных:
   - `statusChartLabels` - подписи времени в формате `d.m H:i`;
-  - `statusChartData` - HTTP-коды.
+  - `statusChartData` - HTTP-коды;
+  - `responseTimeChartData` - response time в миллисекундах или `null`, если измерения нет.
 - Визуальное правило: статус `200` показывается зеленой точкой, остальные статусы - красной.
-- Данные графика кешируются через Symfony `CacheInterface` на 300 секунд под ключом `site_status_chart_{siteId}_24h`.
+- Данные графиков кешируются через Symfony `CacheInterface` на 300 секунд под ключом `site_status_chart_{siteId}_24h_v2`.
 - TTL 300 секунд выбран под cron `site:check-status`, который запускается раз в 5 минут.
 
 ### Проверка домена и SSL
@@ -177,7 +180,7 @@ make create-test-db
 ## Кеш
 
 - Symfony `cache.app` по умолчанию использует файловый кеш; отдельный Redis/Memcached в проект пока не добавлен.
-- Для диаграммы статусов сайта используется ключ `site_status_chart_{siteId}_24h`, например `site_status_chart_1_24h`.
+- Для диаграмм статуса и response time используется ключ `site_status_chart_{siteId}_24h_v2`, например `site_status_chart_1_24h_v2`.
 - Смотреть доступные cache pools:
 
 ```sh
