@@ -19,6 +19,7 @@ class StatusLogServiceTest extends WebTest
 
         self::assertIsInt($statusLog->getId());
         self::assertEquals($statusLog->getStatus(), StatusLogFixture::SITE_STATUS);
+        self::assertEquals($statusLog->getResponseTimeMs(), StatusLogFixture::SITE_RESPONSE_TIME_MS);
 
         self::assertIsInt($statusLog->getSite()->getId());
         self::assertEquals($statusLog->getSite()->getName(), SiteFixture::SITE_NAME);

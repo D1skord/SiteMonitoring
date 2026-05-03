@@ -53,7 +53,7 @@ class SiteController extends AbstractController
     public function show(Site $site, StatusLogRepository $statusLogRepository, CacheInterface $cache): Response
     {
         $statusChart = $cache->get(
-            "site_status_chart_{$site->getId()}_24h",
+            "site_status_chart_{$site->getId()}_24h_v2",
             static function (ItemInterface $item) use ($site, $statusLogRepository): array {
                 $item->expiresAfter(300);
 
@@ -68,6 +68,10 @@ class SiteController extends AbstractController
                         static fn ($statusLog): ?int => $statusLog->getStatus(),
                         $statusLogs
                     ),
+                    'responseTimeData' => array_map(
+                        static fn ($statusLog): ?int => $statusLog->getResponseTimeMs(),
+                        $statusLogs
+                    ),
                 ];
             }
         );
@@ -76,6 +80,7 @@ class SiteController extends AbstractController
             'site' => $site,
             'statusChartLabels' => $statusChart['labels'],
             'statusChartData' => $statusChart['data'],
+            'responseTimeChartData' => $statusChart['responseTimeData'],
         ]);
     }
 

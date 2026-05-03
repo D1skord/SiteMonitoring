@@ -17,6 +17,9 @@ class StatusLog
     #[ORM\Column(nullable: false)]
     private ?int $status = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?int $responseTimeMs = null;
+
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     private ?\DateTimeInterface $timestamp = null;
 
@@ -37,6 +40,18 @@ class StatusLog
     public function setStatus(int $status): self
     {
         $this->status = $status;
+
+        return $this;
+    }
+
+    public function getResponseTimeMs(): ?int
+    {
+        return $this->responseTimeMs;
+    }
+
+    public function setResponseTimeMs(?int $responseTimeMs): self
+    {
+        $this->responseTimeMs = $responseTimeMs;
 
         return $this;
     }

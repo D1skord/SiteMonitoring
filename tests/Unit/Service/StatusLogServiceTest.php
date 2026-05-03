@@ -3,6 +3,7 @@
 namespace App\Tests\Unit\Service;
 
 use App\Entity\Site;
+use App\Entity\StatusLog;
 use App\Message\Notifier;
 use App\Repository\SiteRepository;
 use App\Service\StatusLogService;
@@ -75,7 +76,11 @@ class StatusLogServiceTest extends UnitTest
             ->method('dispatch');
 
         $this->entityManager->expects(self::once())
-            ->method('persist');
+            ->method('persist')
+            ->with(self::callback(
+                static fn (StatusLog $statusLog): bool => $statusLog->getStatus() === 500
+                    && $statusLog->getResponseTimeMs() === 123
+            ));
         $this->entityManager->expects(self::once())
             ->method('flush');
 
@@ -150,6 +155,10 @@ class StatusLogServiceTest extends UnitTest
         $response->expects(self::once())
             ->method('getStatusCode')
             ->willReturn($status);
+        $response->expects(self::once())
+            ->method('getInfo')
+            ->with('total_time')
+            ->willReturn(0.123);
 
         $this->httpClient->expects(self::once())
             ->method('request')

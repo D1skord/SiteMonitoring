@@ -37,22 +37,38 @@ class StatusLogService
 
         foreach ($sites as $site) {
             $previousStatus = $site->getStatus();
-            $status = $this->getSiteStatus($site);
+            $statusCheck = $this->getSiteStatus($site);
+            $status = $statusCheck['status'];
 
             $site->setStatus($status);
             $this->sendNoticeIfStatusChanged($site, $previousStatus, $status);
-            $this->insertStatusLog($site, $status);
+            $this->insertStatusLog($site, $status, $statusCheck['responseTimeMs']);
         }
 
         return Command::SUCCESS;
     }
 
-    private function getSiteStatus(Site $site): int
+    /**
+     * @return array{status: int, responseTimeMs: int|null}
+     */
+    private function getSiteStatus(Site $site): array
     {
         try {
-            return $this->httpClient->request('GET', $site->getUrl())->getStatusCode();
+            $response = $this->httpClient->request('GET', $site->getUrl());
+            $status = $response->getStatusCode();
+            $totalTime = $response->getInfo('total_time');
+
+            return [
+                'status' => $status,
+                'responseTimeMs' => is_float($totalTime) && $totalTime > 0
+                    ? (int) round($totalTime * 1000)
+                    : null,
+            ];
         } catch (TransportExceptionInterface) {
-            return 0;
+            return [
+                'status' => 0,
+                'responseTimeMs' => null,
+            ];
         }
     }
 
@@ -76,11 +92,12 @@ class StatusLogService
         return $status == self::STATUS_SUCCESS;
     }
 
-    public function insertStatusLog(Site $site, int $status): StatusLog
+    public function insertStatusLog(Site $site, int $status, ?int $responseTimeMs): StatusLog
     {
         $statusLog = new StatusLog();
         $statusLog->setSite($site);
         $statusLog->setStatus($status);
+        $statusLog->setResponseTimeMs($responseTimeMs);
         $statusLog->setTimestamp(new DateTime());
         $this->entityManager->persist($statusLog);
         $this->entityManager->flush();

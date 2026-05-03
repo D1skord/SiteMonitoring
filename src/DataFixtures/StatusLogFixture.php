@@ -12,6 +12,7 @@ use Doctrine\Persistence\ObjectManager;
 class StatusLogFixture extends Fixture implements DependentFixtureInterface
 {
     public const int SITE_STATUS = 200;
+    public const int SITE_RESPONSE_TIME_MS = 123;
 
     public function load(ObjectManager $manager): void
     {
@@ -21,6 +22,7 @@ class StatusLogFixture extends Fixture implements DependentFixtureInterface
         $statusLog->setSite($site);
         $statusLog->setTimestamp(new DateTime());
         $statusLog->setStatus(self::SITE_STATUS);
+        $statusLog->setResponseTimeMs(self::SITE_RESPONSE_TIME_MS);
         $manager->persist($statusLog);
         $manager->flush();
     }
