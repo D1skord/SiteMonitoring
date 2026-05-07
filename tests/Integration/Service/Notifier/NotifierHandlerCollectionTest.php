@@ -5,6 +5,7 @@ namespace App\Tests\Integration\Service\Notifier;
 use App\Model\Notifier\Notifier;
 use App\Service\Notifier\NotifierHandlerCollection;
 use App\Tests\Utils\WebTest;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 class NotifierHandlerCollectionTest extends WebTest
 {
@@ -17,19 +18,18 @@ class NotifierHandlerCollectionTest extends WebTest
         $this->notifierHandlerCollection = $this->client->getContainer()->get(NotifierHandlerCollection::class);
     }
 
-    /**
-     * @dataProvider getHandlerProvider
-     */
+    #[DataProvider('getHandlerProvider')]
     public function testGetHandler(string $name): void
     {
         $handler = $this->notifierHandlerCollection->getHandlerByName($name);
         $this->assertEquals($name, $handler->getName());
     }
 
-    public function getHandlerProvider(): array
+    public static function getHandlerProvider(): array
     {
         return [
-            [Notifier::TELEGRAM]
+            [Notifier::TELEGRAM],
+            [Notifier::VK],
         ];
     }
 }

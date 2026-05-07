@@ -13,6 +13,9 @@ services:
         bind:
             $telegramBotToken: '%env(TELEGRAM_BOT_TOKEN)%'
             $telegramChatId: '%env(TELEGRAM_CHAT_ID)%'
+            $vkBotToken: '%env(VK_BOT_TOKEN)%'
+            $vkPeerId: '%env(VK_PEER_ID)%'
+            $vkApiVersion: '%env(VK_API_VERSION)%'
 
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name
@@ -26,5 +29,7 @@ services:
         public: true
     App\Tests\:
         resource: '../tests/'
+        exclude:
+            - '../tests/bootstrap.php'
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

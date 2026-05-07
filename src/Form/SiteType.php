@@ -3,7 +3,6 @@
 namespace App\Form;
 
 use App\Entity\Site;
-use App\Model\Notifier\Notifier;
 use App\Service\Notifier\NotifierHandlerCollection;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
@@ -29,9 +28,6 @@ class SiteType extends AbstractType
                 'multiple' => true,
                 'expanded' => true,
                 'choices' => $this->notifierHandlerCollection->getListHandlers(),
-                'choice_attr' => [
-                    Notifier::TELEGRAM => ['checked' => 'checked']
-                ]
             ]);
     }
 

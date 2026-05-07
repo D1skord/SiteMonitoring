@@ -31,6 +31,9 @@ services:
             MESSENGER_TRANSPORT_DSN: ${MESSENGER_TRANSPORT_DSN}
             TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
             TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+            VK_BOT_TOKEN: ${VK_BOT_TOKEN}
+            VK_PEER_ID: ${VK_PEER_ID}
+            VK_API_VERSION: ${VK_API_VERSION}
         volumes:
             - ./:/var/www/symfony
         depends_on:
@@ -56,6 +59,9 @@ services:
             MESSENGER_TRANSPORT_DSN: ${MESSENGER_TRANSPORT_DSN}
             TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
             TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+            VK_BOT_TOKEN: ${VK_BOT_TOKEN}
+            VK_PEER_ID: ${VK_PEER_ID}
+            VK_API_VERSION: ${VK_API_VERSION}
         volumes:
             - ./:/var/www/symfony
         depends_on:
@@ -81,6 +87,9 @@ services:
             MESSENGER_TRANSPORT_DSN: ${MESSENGER_TRANSPORT_DSN}
             TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
             TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+            VK_BOT_TOKEN: ${VK_BOT_TOKEN}
+            VK_PEER_ID: ${VK_PEER_ID}
+            VK_API_VERSION: ${VK_API_VERSION}
         volumes:
             - ./:/var/www/symfony
         depends_on:

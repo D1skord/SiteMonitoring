@@ -19,6 +19,9 @@ jobs:
           MESSENGER_TRANSPORT_DSN: ${{ secrets.MESSENGER_TRANSPORT_DSN }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          VK_BOT_TOKEN: ${{ secrets.VK_BOT_TOKEN }}
+          VK_PEER_ID: ${{ secrets.VK_PEER_ID }}
+          VK_API_VERSION: ${{ secrets.VK_API_VERSION }}
           DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
           NGINX_PORT: ${{ secrets.NGINX_PORT }}
           TIMEZONE: ${{ secrets.TIMEZONE }}
@@ -40,6 +43,9 @@ jobs:
             printf 'MESSENGER_TRANSPORT_DSN=%s\n' "$MESSENGER_TRANSPORT_DSN"
             printf 'TELEGRAM_BOT_TOKEN=%s\n' "$TELEGRAM_BOT_TOKEN"
             printf 'TELEGRAM_CHAT_ID=%s\n' "$TELEGRAM_CHAT_ID"
+            printf 'VK_BOT_TOKEN=%s\n' "$VK_BOT_TOKEN"
+            printf 'VK_PEER_ID=%s\n' "$VK_PEER_ID"
+            printf 'VK_API_VERSION=%s\n' "$VK_API_VERSION"
             printf 'DOMAIN_NAME=%s\n' "$DOMAIN_NAME"
             printf 'NGINX_PORT=%s\n' "$NGINX_PORT"
             printf 'TIMEZONE=%s\n' "$TIMEZONE"
