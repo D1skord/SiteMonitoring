@@ -20,6 +20,14 @@
 - Не запускай destructive-команды, миграции на живой БД, очистку volume/cache/data и деплой без явного подтверждения.
 - Для поиска используй `rg`/`rg --files`. Исключай `vendor/`, `var/`, `docker/data/`, `.git/`, `.idea/`.
 
+## Project Skills
+
+- Project-local skills лежат в `.agents/skills/` и должны подтягиваться вместе с репозиторием.
+- Не полагайся на глобально установленные skills: на другой машине их может не быть.
+- Для обычной разработки используй `site-monitoring-feature-flow`.
+- Для production rollout используй `site-monitoring-deploy`.
+- Для PHP/Symfony best practices используй завендоренные skills `php-best-practices` и `symfony-*` из `.agents/skills/`.
+
 ## Частые Команды
 
 ```sh
@@ -210,7 +218,7 @@ docker compose exec -T scheduler php bin/console cache:pool:clear cache.app
   - `tests/Utils/UnitTest.php`;
   - `tests/Utils/WebTest.php`.
 - `phpunit.xml.dist` сейчас включает suites `Unit` и `Functional`; `Integration` не входит в объявленные suites, но тесты физически есть.
-- В test-окружении есть известная проблема: `config/services_test.yaml` импортирует `App\Tests\` из `../tests/`, из-за чего Symfony пытается загрузить `tests/bootstrap.php` как класс `App\Tests\bootstrap`. Это может ломать integration/web tests до исправления exclude для bootstrap-файла.
+- В test-окружении `config/services_test.yaml` импортирует `App\Tests\` из `../tests/` и исключает `tests/bootstrap.php`, чтобы Symfony не пытался загрузить bootstrap-файл как класс.
 - Fixtures:
   - `src/DataFixtures/AppFixtures.php`;
   - `src/DataFixtures/SiteFixture.php`;
@@ -273,42 +281,11 @@ cp docker-compose.override.yml.example docker-compose.override.yml
 
 ### Операция "Раскатай"
 
-Если пользователь просит "раскатай", "отправляем и раскатываем" или аналогично, действуй по этому чеклисту:
-
-1. Проверить состояние:
-   - `git status --short --branch`;
-   - убедиться, что в worktree нет несвязанных чужих правок.
-2. Проверить изменения:
-   - для PHP-файлов `php -l path/to/file.php`;
-   - для compose `docker compose --env-file .env.example -f docker-compose.prod.yml config --quiet`, если менялся prod compose;
-   - для широких изменений `cp .env.example .env && cp .env.test.example .env.test && make test`.
-3. После успешных проверок:
-   - `git add` только релевантных файлов;
-   - `git commit -m "..."`;
-   - `git push origin master`.
-4. Проверить GitHub Actions:
-   - `gh run list --repo D1skord/SiteMonitoring --limit 5`;
-   - дождаться зеленого CI run для текущего commit через `gh run watch <run_id> --repo D1skord/SiteMonitoring --exit-status`.
-5. Запустить ручной deploy:
-   - `gh workflow run Deploy --repo D1skord/SiteMonitoring --ref master`;
-   - найти run через `gh run list --repo D1skord/SiteMonitoring --workflow Deploy --limit 3`;
-   - дождаться результата через `gh run watch <run_id> --repo D1skord/SiteMonitoring --exit-status`.
-6. После deploy проверить сайт:
-   - `curl --max-time 15 -I http://sitemonitoring.vinichenko-ivan.ru/`;
-   - `curl --max-time 15 -k -I https://sitemonitoring.vinichenko-ivan.ru/`;
-   - если TLS-сертификат невалиден, отдельно сказать, что приложение работает, но верхний nginx/сертификат требуют настройки.
-
-Текущая production-схема:
-
-- GitHub secret `VDS_HOST` должен быть IP VDS, не домен.
-- GitHub secret `DOMAIN_NAME` должен быть `sitemonitoring.vinichenko-ivan.ru`.
-- Верхний nginx на VDS проксирует `sitemonitoring.vinichenko-ivan.ru` на `127.0.0.1:8082`.
-- GitHub secret `NGINX_PORT` должен быть `8082`.
-- Production project path: `/var/www/vinichenko/data/www/sitemonitoring.vinichenko-ivan.ru`.
-- Production deploy использует `docker-compose.prod.yml`; на сервере может быть старый `docker-compose`, поэтому prod compose держится совместимым с `version: "3.3"` и без `${VAR:-default}`.
-- Production queue worker - отдельный service `worker`, который запускает `php bin/console messenger:consume async -vv`.
+Если пользователь просит "раскатай", "отправляем и раскатываем", "выкати на prod" или аналогично, используй project skill `site-monitoring-deploy`.
 
 ## Правила Изменений
+
+Для обычной разработки фич, багфиксов и рефакторинга используй project skill `site-monitoring-feature-flow`.
 
 - Для новой бизнес-логики сначала ищи существующий сервис/команду/тест рядом с нужным сценарием.
 - Для CRUD и форм держись Symfony patterns из `SiteController`, `SiteType`, Twig-шаблонов.

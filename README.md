@@ -51,6 +51,23 @@ AGENTS.md
 
 В этом файле описаны архитектура, доменная модель, команды, проверки, риски окружения и правила безопасной работы с репозиторием.
 
+## Подготовка к публикации на GitHub
+
+В репозиторий должны попадать только файлы проекта, примеры окружения и workflow:
+
+- коммитятся `.env.example`, `.env.test.example`, `docker-compose.yml`, `docker-compose.test.yml`, `docker-compose.prod.yml`, `.github/workflows/*`;
+- не коммитятся `.env`, `.env.test`, `.env.local`, `docker-compose.override.yml`, `vendor/`, `var/`, `docker/data/`, `.idea/`;
+- реальные токены, пароли, chat id и peer id хранятся только локально или в GitHub Secrets.
+
+Перед публикацией полезно проверить состояние:
+
+```sh
+git status --short --ignored
+docker compose --env-file .env.example config --quiet
+docker compose --env-file .env.test.example -f docker-compose.test.yml config --quiet
+docker compose --env-file .env.example -f docker-compose.prod.yml config --quiet
+```
+
 ## Запуск проекта
 
 1. Создайте локальный `.env` из примера:
@@ -123,3 +140,77 @@ AGENTS.md
   ```sh
   make check-site-ssl-expire siteId=1
   ```
+
+## Тесты и CI
+
+GitHub Actions workflow `.github/workflows/ci.yml` запускается на push в `master` и на pull request.
+
+CI выполняет:
+
+1. checkout репозитория;
+2. создание `.env` и `.env.test` из example-файлов;
+3. запуск `make test` в Docker Compose test-окружении;
+4. остановку test-контейнеров.
+
+Локально тот же набор проверок запускается командой:
+
+```sh
+cp .env.example .env
+cp .env.test.example .env.test
+make test
+```
+
+## Docker-схема
+
+В проекте три compose-файла:
+
+- `docker-compose.yml` - локальная разработка: `nginx`, `php`, `postgres`, `rabbitmq`;
+- `docker-compose.test.yml` - изолированное test-окружение: `php`, `postgres_test`, `rabbitmq_test`;
+- `docker-compose.prod.yml` - production: `nginx`, `php`, `worker`, `scheduler`, `postgres`, `rabbitmq`.
+
+Production compose оставлен совместимым со старым `docker-compose`, поэтому в нем используется `version: "3.3"` и переменные без `${VAR:-default}`.
+
+## Deploy
+
+Deploy workflow `.github/workflows/deploy.yml` запускается вручную через `workflow_dispatch`.
+
+Схема деплоя:
+
+1. GitHub Actions собирает production `.env` из GitHub Secrets.
+2. `.env` загружается на VDS в `PROD_DIR`.
+3. На сервере репозиторий обновляется до `origin/master`.
+4. Запускается `docker-compose.prod.yml`, устанавливаются production Composer-зависимости, применяются миграции и очищается prod-cache.
+5. Пересоздаются `nginx`, `worker` и `scheduler`.
+
+Для deploy нужны GitHub Secrets:
+
+```text
+APP_ENV
+APP_SECRET
+DATABASE_URL
+MESSENGER_TRANSPORT_DSN
+TELEGRAM_BOT_TOKEN
+TELEGRAM_CHAT_ID
+VK_BOT_TOKEN
+VK_PEER_ID
+VK_API_VERSION
+DOMAIN_NAME
+NGINX_PORT
+TIMEZONE
+UID
+GID
+POSTGRES_USER
+POSTGRES_PASSWORD
+POSTGRES_DB
+POSTGRES_VERSION
+POSTGRES_PORT
+RABBITMQ_PASS
+RABBITMQ_MANAGEMENT_PORT
+VDS_HOST
+VDS_USER
+VDS_PORT
+VDS_PASSWORD
+PROD_DIR
+```
+
+Deploy использует password-based SSH через `sshpass`. Если сервер будет переведен на SSH key-based auth, workflow нужно обновить отдельно.
