@@ -1,43 +1,16 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const userDropdownToggle = document.querySelector('.js-user-dropdown-toggle');
-    const userDropdownMenu = document.querySelector('.js-user-dropdown-menu');
+    const searchInput = document.getElementById('tableSearch');
+    const table = document.getElementById('sitesTable');
 
-    if (!userDropdownToggle || !userDropdownMenu) {
-        return;
-    }
+    if (searchInput && table) {
+        searchInput.addEventListener('keyup', (e) => {
+            const searchText = e.target.value.toLowerCase();
+            const rows = table.querySelectorAll('tbody tr');
 
-    const closeUserDropdown = () => {
-        userDropdownToggle.classList.remove('show');
-        userDropdownToggle.setAttribute('aria-expanded', 'false');
-        userDropdownMenu.classList.remove('show');
-    };
-
-    userDropdownToggle.addEventListener('click', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-
-        const isOpen = userDropdownMenu.classList.contains('show');
-        userDropdownToggle.classList.toggle('show', !isOpen);
-        userDropdownToggle.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
-        userDropdownMenu.classList.toggle('show', !isOpen);
-    });
-
-    document.addEventListener('click', (event) => {
-        if (!userDropdownMenu.contains(event.target)) {
-            closeUserDropdown();
-        }
-    });
-
-    document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') {
-            closeUserDropdown();
-        }
-    });
-});
-
-// Call the dataTables jQuery plugin
-$(document).ready(function() {
-    if ($.fn.DataTable) {
-        $('#dataTable').DataTable();
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchText) ? '' : 'none';
+            });
+        });
     }
 });

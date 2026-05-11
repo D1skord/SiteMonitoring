@@ -1,39 +1,54 @@
 {% extends 'empty.html.twig' %}
 
+{% block title %}Регистрация | Site monitoring{% endblock %}
+
 {% block body %}
-  <div class="row justify-content-center">
-    <div class="col-lg-5">
+<div class="card">
+  <div class="card-body register-card-body">
+    <p class="login-box-msg">Создайте аккаунт для управления проверками сайтов</p>
 
-      <div class="card shadow-lg border-0 rounded-lg mt-5">
-        <div class="card-header"><h3 class="text-center font-weight-light my-4">Register</h3></div>
-        <div class="card-body">
-          {{ form_start(registrationForm) }}
-          <div class="form-floating mb-3">
-            <input class="form-control"
-                   id="inputEmail"
-                   type="email"
-                   placeholder="{{ field_label(registrationForm.email) }}"
-                   name="{{ field_name(registrationForm.email) }}"
-                   value="{{ field_value(registrationForm.email) }}">
-            <label for="inputEmail">{{ field_label(registrationForm.email) }}</label>
+    {{ form_start(registrationForm, {'attr': {'class': 'needs-validation'}}) }}
+      <div class="input-group mb-3">
+        <input class="form-control"
+               type="email"
+               id="inputEmail"
+               name="{{ field_name(registrationForm.email) }}"
+               value="{{ field_value(registrationForm.email) }}"
+               placeholder="{{ field_label(registrationForm.email) }}"
+               required autofocus>
+        <div class="input-group-append">
+          <div class="input-group-text">
+            <span class="fas fa-envelope"></span>
           </div>
-          <div class="form-floating mb-3">
-            <input class="form-control"
-                   id="inputPassword"
-                   type="password"
-                   placeholder="{{ field_label(registrationForm.plainPassword) }}"
-                   name="{{ field_name(registrationForm.plainPassword) }}"
-                   value="{{ field_value(registrationForm.plainPassword) }}">
-            <label for="inputPassword">{{ field_label(registrationForm.plainPassword) }}</label>
-          </div>
-          <div class="d-flex justify-content-end">
-            <button class="btn btn-primary" type="submit">Register</button>
-          </div>
-          {{ form_end(registrationForm) }}
         </div>
-
       </div>
+      <div class="input-group mb-3">
+        <input class="form-control"
+               type="password"
+               id="inputPassword"
+               name="{{ field_name(registrationForm.plainPassword) }}"
+               value="{{ field_value(registrationForm.plainPassword) }}"
+               placeholder="{{ field_label(registrationForm.plainPassword) }}"
+               required>
+        <div class="input-group-append">
+          <div class="input-group-text">
+            <span class="fas fa-lock"></span>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-12">
+          <button class="btn btn-primary btn-block" type="submit">
+            <i class="fa-solid fa-user-plus mr-1"></i>
+            Зарегистрироваться
+          </button>
+        </div>
+      </div>
+    {{ form_end(registrationForm) }}
+
+    <div class="text-center mt-3">
+      <a href="{{ path('app_login') }}">Уже есть аккаунт? Войдите</a>
     </div>
   </div>
-
+</div>
 {% endblock %}
